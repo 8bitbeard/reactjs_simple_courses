@@ -4,7 +4,7 @@ import './App.css';
 import CoursesList from './CoursesList';
 import Search from './Search';
 
-const courses = [
+const courses_data = [
   {
     id: 1,
     title: "React - The Complete Guide (incl Hooks, React Router, Redux)",
@@ -36,7 +36,11 @@ const courses = [
 
 
 const App = () => {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(
+    localStorage.getItem('searchText') || ''
+  );
+  const [courses, setCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const filteredCourses = courses.filter( (course) => {
     return course.title.includes(searchText) || course.author.includes(searchText);
@@ -46,9 +50,36 @@ const App = () => {
     setSearchText(event.target.value);
   }
 
+  // const getCoursesAsync = () => {
+  //   new Promise( (resolve) => {
+  //     setTimeout( () => {
+  //         resolve({
+  //           courses: courses_data
+  //         }), 2000
+  //       }
+  //     )
+  //   })
+  // }
+
+  const getCoursesAsync = () => 
+  new Promise(resolve => 
+      setTimeout(
+        () => resolve({ courses: courses_data }),
+        2000
+      )
+    );
+
   useEffect(() => {
     localStorage.setItem('searchText', searchText);
   }, [searchText]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getCoursesAsync().then( (result) => {
+      setCourses(result.courses);
+      setIsLoading(false);
+    })
+  }, [])
 
   return (
     <div>
@@ -57,7 +88,13 @@ const App = () => {
 
       <Search value={searchText} onSearch={handleSearch} />
 
-      <CoursesList courses={filteredCourses} />
+      {isLoading ? (
+        <p>Loading Courses ...</p>
+      ) : (
+        <CoursesList courses={filteredCourses} />
+      )}
+
+      {/* <CoursesList courses={filteredCourses} /> */}
     </div>
   );
 }
