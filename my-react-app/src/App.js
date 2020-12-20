@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import './App.css';
 
 import CoursesList from './CoursesList';
@@ -34,12 +34,25 @@ const courses_data = [
   }
 ];
 
+const coursesReducer = (state, action) => {
+  switch(action.type) {
+    case 'SET_COURSES':
+      return action.payload;
+    case 'REMOVE_COURSE':
+      return state.filter(
+        course => action.payload.id !== course.id
+      );
+    default:
+      throw new Error();
+  }
+};
 
 const App = () => {
   const [searchText, setSearchText] = useState(
     localStorage.getItem('searchText') || ''
   );
-  const [courses, setCourses] = useState([]);
+  // const [courses, setCourses] = useState([]);
+  const [courses, dispatchCourses] = useReducer(coursesReducer, []);
   const [isLoading, setIsLoading] = useState(false);
 
   const filteredCourses = courses.filter( (course) => {
@@ -50,22 +63,19 @@ const App = () => {
     setSearchText(event.target.value);
   }
 
-  // const getCoursesAsync = () => {
-  //   new Promise( (resolve) => {
-  //     setTimeout( () => {
-  //         resolve({
-  //           courses: courses_data
-  //         }), 2000
-  //       }
-  //     )
-  //   })
-  // }
+  const handleRemoveCourse = (course) => {
+    dispatchCourses({
+      type: 'REMOVE_COURSE',
+      payload: course
+    });
+  }
 
-  const getCoursesAsync = () => 
-  new Promise(resolve => 
-      setTimeout(
-        () => resolve({ courses: courses_data }),
-        2000
+  const getCoursesAsync = () =>
+    new Promise(resolve =>
+      setTimeout( () =>
+        resolve({
+          courses: courses_data
+        }), 2000
       )
     );
 
@@ -76,7 +86,11 @@ const App = () => {
   useEffect(() => {
     setIsLoading(true);
     getCoursesAsync().then( (result) => {
-      setCourses(result.courses);
+      dispatchCourses({
+        type: 'SET_COURSES',
+        payload: result.courses
+      });
+      // setCourses(result.courses);
       setIsLoading(false);
     })
   }, [])
@@ -91,7 +105,7 @@ const App = () => {
       {isLoading ? (
         <p>Loading Courses ...</p>
       ) : (
-        <CoursesList courses={filteredCourses} />
+        <CoursesList courses={filteredCourses} handleRemoveCourse={handleRemoveCourse}/>
       )}
 
       {/* <CoursesList courses={filteredCourses} /> */}
